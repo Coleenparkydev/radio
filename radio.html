@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Newstalk ZB 라디오</title>
+    <!-- HLS.js 라이브러리를 가져옵니다 -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a2e;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .radio-container {
+            background-color: #16213e;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            text-align: center;
+            width: 300px;
+            border: 2px solid #e94560;
+        }
+        h2 {
+            margin-top: 0;
+            color: #e94560;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        button {
+            background-color: #e94560;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #c83349;
+        }
+        .volume-slider {
+            width: 100%;
+            margin-top: 15px;
+        }
+        .status {
+            font-size: 14px;
+            color: #aaaaaa;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="radio-container">
+        <h2>🎙️ Newstalk ZB</h2>
+        <p id="channel-name">Live Broadcast</p>
+        
+        <audio id="radio-player"></audio>
+
+        <div class="controls">
+            <button id="play-btn">재생 (Play)</button>
+        </div>
+
+        <div>
+            <label for="volume">볼륨조절</label>
+            <input type="range" id="volume" class="volume-slider" min="0" max="1" step="0.05" value="0.5">
+        </div>
+
+        <div class="status" id="status-text">대기 중...</div>
+    </div>
+
+    <script>
+        const audio = document.getElementById('radio-player');
+        const playBtn = document.getElementById('play-btn');
+        const volumeControl = document.getElementById('volume');
+        const statusText = document.getElementById('status-text');
+
+        // ★ 중요: 여기에 실제 Newstalk ZB의 스트리밍 주소를 넣어야 합니다.
+        // 방송국 주소는 주기적으로 바뀔 수 있습니다.
+        const streamUrl = 'https://apn-nz-hlslive.s3.amazonaws.com/out/v1/a2489e3a6cde4e2a8c3d9b8915dd7cf5/index.m3u8'; 
+
+        // 오디오 초기 설정
+        audio.volume = volumeControl.value;
+        let hls;
+
+        function setupAudio() {
+            if (Hls.isSupported()) {
+                hls = new Hls();
+                hls.loadSource(streamUrl);
+                hls.attachMedia(audio);
+                hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                    statusText.innerText = '방송 연결 완료!';
+                });
+            } 
+            // 사파리(Safari) 브라우저는 자체적으로 m3u8을 지원합니다
+            else if (audio.canPlayType('application/vnd.apple.mpegurl')) {
+                audio.src = streamUrl;
+                audio.addEventListener('loadedmetadata', function() {
+                    statusText.innerText = '방송 연결 완료!';
+                });
+            }
+        }
+
+        setupAudio();
+
+        // 재생/일시정지 버튼
+        playBtn.addEventListener('click', () => {
+            if (audio.paused) {
+                statusText.innerText = '스트리밍 불러오는 중...';
+                audio.play()
+                    .then(() => {
+                        playBtn.innerText = '정지 (Stop)';
+                        statusText.innerText = '실시간 방송 듣는 중 🎧';
+                    })
+                    .catch((error) => {
+                        console.error('재생 에러:', error);
+                        statusText.innerText = '재생 실패! (CORS 또는 주소 오류)';
+                    });
+            } else {
+                audio.pause();
+                playBtn.innerText = '재생 (Play)';
+                statusText.innerText = '일시 정지됨';
+            }
+        });
+
+        // 볼륨 조절
+        volumeControl.addEventListener('input', (e) => {
+            audio.volume = e.target.value;
+        });
+    </script>
+</body>
+</html>
